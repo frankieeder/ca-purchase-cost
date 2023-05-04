@@ -198,14 +198,12 @@ if __name__ == '__main__':
     property_tax_percentage /= PERCENT_MAX
 
     mortgage_years = st.number_input(
-        label='Purchase Price',
+        label='Mortgage Duration (years)',
         value=30,
     )
 
-    loan_amount_usd = purchase_price * (1 - down_payment_percentage)
-
     property_loan = PropertyLoan(
-        loan_amount_usd=loan_amount_usd,
+        loan_amount_usd=purchase_price * (1 - down_payment_percentage),
         interest_rate_percentage=interest_rate_percentage,
         mortgage_years=mortgage_years,
         property_taxes_yearly_usd=purchase_price * property_tax_percentage,
