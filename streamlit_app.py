@@ -100,13 +100,15 @@ class PropertyLoan:
             loan_status = self.calculate_next_loan_status(loan_status)
             yield loan_status
 
-    def as_dataframe(self) -> pd.DataFrame:
+    @property
+    def dataframe(self) -> pd.DataFrame:
         df = pd.DataFrame(iter(self))
         df['date'] = pd.to_datetime(df['date'])
         return df
 
-    def yearly_dataframe(self) -> pd.DataFrame:
-        df = self.as_dataframe()
+    @property
+    def dataframe_yearly(self) -> pd.DataFrame:
+        df = self.dataframe
         df_by_year = (
             df
             .groupby(df['date'].dt.year)
@@ -115,7 +117,7 @@ class PropertyLoan:
         return df_by_year
 
     def graph_yearly(self) -> go.Figure:
-        df = self.yearly_dataframe()
+        df = self.dataframe_yearly
         fig = go.Figure(data=[
             go.Bar(
                 name='Interest',
@@ -142,7 +144,6 @@ if __name__ == '__main__':
         label='Purchase Price',
         value=1_000_000,
     )
-
 
     PERCENT_MAX = 100
     down_payment_percentage = st.number_input(
@@ -185,7 +186,5 @@ if __name__ == '__main__':
         mortgage_years=mortgage_years,
     )
     st.markdown(f"Loan Amount: {property_loan.loan_amount_usd}")
-
-    loan_statuses = property_loan.as_dataframe()
 
     st.write(property_loan.graph_yearly())
