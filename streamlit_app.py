@@ -6,11 +6,13 @@ from dataclasses import dataclass
 
 MONTHS_PER_YEAR = 12
 
+
 @dataclass
 class LoanStatus:
     balance: float
     interest: float
     principal: float
+
 
 @dataclass
 class PropertyLoan:
