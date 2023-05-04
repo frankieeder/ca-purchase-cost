@@ -1,14 +1,14 @@
 import streamlit as st
-#import plotly.graph_objects as go
 import pandas as pd
 from dataclasses import dataclass
-
-
-MONTHS_PER_YEAR = 12
+import datetime
+from dateutil.relativedelta import relativedelta
+# import plotly.graph_objects as go
 
 
 @dataclass
 class LoanStatus:
+    date: datetime.date
     balance: float
     interest: float
     principal: float
@@ -21,6 +21,7 @@ class PropertyLoan:
     loan_amount_usd: float
     interest_rate_percentage: float
     mortgage_years: float
+    payment_interval: relativedelta = relativedelta(months=1)
 
     @property
     def mortgage_per_year_usd(self):
@@ -62,6 +63,7 @@ class PropertyLoan:
             balance_usd=next_months_balance
         )
         next_loan_status = LoanStatus(
+            date=loan_status.date + self.payment_interval,
             balance=next_months_balance,
             interest=next_months_interest,
             principal=next_months_principal
@@ -78,6 +80,7 @@ class PropertyLoan:
             balance_usd=self.loan_amount_usd
         )
         initial_loan_status = LoanStatus(
+            date=datetime.date.today(),
             balance=self.loan_amount_usd,
             interest=first_months_interest,
             principal=first_months_principal,
