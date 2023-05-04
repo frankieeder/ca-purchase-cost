@@ -16,7 +16,7 @@ class LoanStatus:
     taxes: float
 
 
-@dataclass
+@dataclass(kw_only=True)
 class PropertyLoan:
     MONTHS_PER_YEAR = 12
     YEARLY_AGGREGATIONS = dict(
@@ -142,7 +142,7 @@ class PropertyLoan:
             in cls.PAYMENT_COLUMN_MAPPINGS.items()
             if col in df.columns
         ])
-        fig.update_layout(barmode='stack')
+        fig.update_layout(barmode='relative')
         return fig
 
     def graph_yearly(self) -> go.Figure:
@@ -154,6 +154,31 @@ class PropertyLoan:
     @property
     def property_taxes_monthly_usd(self):
         return self.property_taxes_yearly_usd / self.MONTHS_PER_YEAR
+
+
+@dataclass(kw_only=True)
+class IncomeAdjustedPropertyLoan(PropertyLoan):
+    STANDARD_DEDUCTION = 13_850.00
+    PAYMENT_COLUMN_MAPPINGS = dict(
+        interest='Interest',
+        principal='Principal',
+        taxes='Taxes',
+        estimated_tax_savings='Estimated Tax Savings',
+    )
+
+    agi_usd: float
+    itemized_deductions_usd: float
+
+    @property
+    def dataframe_yearly(self) -> pd.DataFrame:
+        df = super().dataframe_yearly
+        df['agi'] = self.agi_usd
+        df['total_itemized_deductions'] = df['interest'] + self.itemized_deductions_usd
+        df['standard_deduction'] = self.STANDARD_DEDUCTION
+        df['maximum_deduction'] = df[['total_itemized_deductions', 'standard_deduction']].max(axis=1)
+        df['agi_reduced'] = df['agi'] - df['maximum_deduction']
+        df['estimated_tax_savings'] = -0.4 * df['maximum_deduction']
+        return df
 
 
 if __name__ == '__main__':
@@ -200,11 +225,27 @@ if __name__ == '__main__':
         value=30,
     )
 
-    property_loan = PropertyLoan(
+    agi_usd = st.number_input(
+        label='Adjusted Gross Income',
+        help='excluding property related deductions, which we will calculate',
+        min_value=0.0,
+        value=70_000.0,
+    )
+    itemized_deductions_usd = st.number_input(
+        label='Itemized Deductions',
+        help='Used in above calculation',
+        min_value=0.0,
+        value=0.0,
+    )
+
+    property_loan = IncomeAdjustedPropertyLoan(
         loan_amount_usd=purchase_price * (1 - down_payment_percentage),
         interest_rate_percentage=interest_rate_percentage,
         mortgage_years=mortgage_years,
         property_taxes_yearly_usd=purchase_price * property_tax_percentage,
+
+        agi_usd=agi_usd,
+        itemized_deductions_usd=itemized_deductions_usd,
     )
 
     st.markdown(f"Loan Amount: {property_loan.loan_amount_usd}")
