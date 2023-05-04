@@ -17,6 +17,11 @@ class LoanStatus:
 @dataclass
 class PropertyLoan:
     MONTHS_PER_YEAR = 12
+    YEARLY_AGGREGATIONS = dict(
+        balance='max',
+        interest='sum',
+        principal='sum'
+    )
 
     loan_amount_usd: float
     interest_rate_percentage: float
@@ -104,11 +109,7 @@ class PropertyLoan:
         df_by_year = (
             df
             .groupby(df['date'].dt.year)
-            .agg(dict(
-                balance='max',
-                interest='sum',
-                principal='sum'
-            ))
+            .agg(self.YEARLY_AGGREGATIONS)
         )
         return df_by_year
 
