@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import datetime
 from dateutil.relativedelta import relativedelta
 from typing import Iterable
-# import plotly.graph_objects as go
+import plotly.graph_objects as go
 
 
 @dataclass
@@ -114,6 +114,23 @@ class PropertyLoan:
         )
         return df_by_year
 
+    def graph_yearly(self) -> go.Figure:
+        df = self.yearly_dataframe()
+        fig = go.Figure(data=[
+            go.Bar(
+                name='Interest',
+                x=df.index,
+                y=df['interest']
+            ),
+            go.Bar(
+                name='Principal',
+                x=df.index,
+                y=df['principal']
+            )
+        ])
+        fig.update_layout(barmode='stack')
+        return fig
+
 
 if __name__ == '__main__':
     st.markdown("This tool helps determine the actual cost of a home purchase in California, USA,"
@@ -171,5 +188,4 @@ if __name__ == '__main__':
 
     loan_statuses = property_loan.as_dataframe()
 
-    st.write(loan_statuses)
-    st.write(property_loan.yearly_dataframe())
+    st.write(property_loan.graph_yearly())
