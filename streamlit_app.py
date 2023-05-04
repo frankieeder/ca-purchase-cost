@@ -25,6 +25,11 @@ class PropertyLoan:
         principal='sum',
         taxes='sum',
     )
+    PAYMENT_COLUMN_MAPPINGS = dict(
+        interest='Interest',
+        principal='Principal',
+        taxes='Taxes',
+    )
 
     loan_amount_usd: float
     interest_rate_percentage: float
@@ -125,24 +130,17 @@ class PropertyLoan:
     def total_interest(self):
         return self.dataframe['interest'].sum()
 
-    @staticmethod
-    def _make_graph_from_df(df) -> go.Figure:
+    @classmethod
+    def _make_graph_from_df(cls, df) -> go.Figure:
         fig = go.Figure(data=[
             go.Bar(
-                name='Interest',
+                name=col_title,
                 x=df.index,
-                y=df['interest']
-            ),
-            go.Bar(
-                name='Principal',
-                x=df.index,
-                y=df['principal']
-            ),
-            go.Bar(
-                name='Taxes & Fees',
-                x=df.index,
-                y=df['taxes']
-            ),
+                y=df[col]
+            )
+            for col, col_title
+            in cls.PAYMENT_COLUMN_MAPPINGS.items()
+            if col in df.columns
         ])
         fig.update_layout(barmode='stack')
         return fig
@@ -208,10 +206,10 @@ if __name__ == '__main__':
         mortgage_years=mortgage_years,
         property_taxes_yearly_usd=purchase_price * property_tax_percentage,
     )
+
     st.markdown(f"Loan Amount: {property_loan.loan_amount_usd}")
     st.markdown(f"Monthly Payment: {property_loan.mortgage_per_month_usd}")
     st.markdown(f"Total Interest Paid: {property_loan.total_interest}")
-    st.write(property_loan.dataframe)
 
     st.write(property_loan.graph_yearly())
     st.write(property_loan.graph_monthly())
