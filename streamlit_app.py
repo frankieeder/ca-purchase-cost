@@ -3,6 +3,7 @@ import pandas as pd
 from dataclasses import dataclass
 import datetime
 from dateutil.relativedelta import relativedelta
+from typing import Iterable
 # import plotly.graph_objects as go
 
 
@@ -92,7 +93,7 @@ class PropertyLoan:
         )
         return initial_loan_status
 
-    def __iter__(self) -> iter[LoanStatus]:
+    def __iter__(self) -> Iterable[LoanStatus]:
         loan_status = self.initial_loan_status
         yield loan_status
         while loan_status.balance > 0:
