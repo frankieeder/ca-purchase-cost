@@ -13,6 +13,7 @@ class LoanStatus:
     balance: float
     interest: float
     principal: float
+    taxes: float
 
 
 @dataclass
@@ -21,12 +22,14 @@ class PropertyLoan:
     YEARLY_AGGREGATIONS = dict(
         balance='max',
         interest='sum',
-        principal='sum'
+        principal='sum',
+        taxes='sum',
     )
 
     loan_amount_usd: float
     interest_rate_percentage: float
     mortgage_years: float
+    property_taxes_yearly_usd: float
     payment_interval: relativedelta = relativedelta(months=1)
 
     @property
@@ -72,7 +75,8 @@ class PropertyLoan:
             date=loan_status.date + self.payment_interval,
             balance=next_months_balance,
             interest=next_months_interest,
-            principal=next_months_principal
+            principal=next_months_principal,
+            taxes=loan_status.taxes,
         )
         return next_loan_status
 
@@ -90,6 +94,7 @@ class PropertyLoan:
             balance=self.loan_amount_usd,
             interest=first_months_interest,
             principal=first_months_principal,
+            taxes=self.property_taxes_monthly_usd,
         )
         return initial_loan_status
 
@@ -132,7 +137,12 @@ class PropertyLoan:
                 name='Principal',
                 x=df.index,
                 y=df['principal']
-            )
+            ),
+            go.Bar(
+                name='Taxes & Fees',
+                x=df.index,
+                y=df['taxes']
+            ),
         ])
         fig.update_layout(barmode='stack')
         return fig
@@ -143,6 +153,9 @@ class PropertyLoan:
     def graph_monthly(self) -> go.Figure:
         return self._make_graph_from_df(self.dataframe.set_index('date'))
 
+    @property
+    def property_taxes_monthly_usd(self):
+        return self.property_taxes_yearly_usd / self.MONTHS_PER_YEAR
 
 
 if __name__ == '__main__':
@@ -195,10 +208,12 @@ if __name__ == '__main__':
         loan_amount_usd=loan_amount_usd,
         interest_rate_percentage=interest_rate_percentage,
         mortgage_years=mortgage_years,
+        property_taxes_yearly_usd=purchase_price * property_tax_percentage,
     )
     st.markdown(f"Loan Amount: {property_loan.loan_amount_usd}")
     st.markdown(f"Monthly Payment: {property_loan.mortgage_per_month_usd}")
     st.markdown(f"Total Interest Paid: {property_loan.total_interest}")
+    st.write(property_loan.dataframe)
 
     st.write(property_loan.graph_yearly())
     st.write(property_loan.graph_monthly())
