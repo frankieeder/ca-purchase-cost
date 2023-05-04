@@ -47,7 +47,7 @@ class PropertyLoan:
             self,
             balance_usd: float,
     ) -> float:
-        return (balance_usd * self.interest_rate_percentage) / 12
+        return (balance_usd * self.interest_rate_percentage) / self.MONTHS_PER_YEAR
 
     def calculate_monthly_principal(
             self,
@@ -116,8 +116,12 @@ class PropertyLoan:
         )
         return df_by_year
 
-    def graph_yearly(self) -> go.Figure:
-        df = self.dataframe_yearly
+    @property
+    def total_interest(self):
+        return self.dataframe['interest'].sum()
+
+    @staticmethod
+    def _make_graph_from_df(df) -> go.Figure:
         fig = go.Figure(data=[
             go.Bar(
                 name='Interest',
@@ -132,6 +136,13 @@ class PropertyLoan:
         ])
         fig.update_layout(barmode='stack')
         return fig
+
+    def graph_yearly(self) -> go.Figure:
+        return self._make_graph_from_df(self.dataframe_yearly)
+
+    def graph_monthly(self) -> go.Figure:
+        return self._make_graph_from_df(self.dataframe.set_index('date'))
+
 
 
 if __name__ == '__main__':
@@ -186,5 +197,8 @@ if __name__ == '__main__':
         mortgage_years=mortgage_years,
     )
     st.markdown(f"Loan Amount: {property_loan.loan_amount_usd}")
+    st.markdown(f"Monthly Payment: {property_loan.mortgage_per_month_usd}")
+    st.markdown(f"Total Interest Paid: {property_loan.total_interest}")
 
     st.write(property_loan.graph_yearly())
+    st.write(property_loan.graph_monthly())
