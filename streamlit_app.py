@@ -95,7 +95,22 @@ class PropertyLoan:
             yield loan_status
 
     def as_dataframe(self):
-        return pd.DataFrame(iter(self))
+        df = pd.DataFrame(iter(self))
+        df['date'] = pd.to_datetime(df['date'])
+        return df
+
+    def yearly_dataframe(self):
+        df = self.as_dataframe()
+        df_by_year = (
+            df
+            .groupby(df['date'].dt.year)
+            .agg(dict(
+                balance='max',
+                interest='sum',
+                principal='sum'
+            ))
+        )
+        return df_by_year
 
 
 if __name__ == '__main__':
@@ -155,3 +170,4 @@ if __name__ == '__main__':
     loan_statuses = property_loan.as_dataframe()
 
     st.write(loan_statuses)
+    st.write(property_loan.yearly_dataframe())
