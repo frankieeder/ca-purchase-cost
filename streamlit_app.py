@@ -24,7 +24,7 @@ class PropertyLoan:
     payment_interval: relativedelta = relativedelta(months=1)
 
     @property
-    def mortgage_per_year_usd(self):
+    def mortgage_per_year_usd(self) -> float:
         numerator = (1 + self.interest_rate_percentage) ** self.mortgage_years
         denomenator = numerator - 1
         result = self.loan_amount_usd
@@ -34,20 +34,20 @@ class PropertyLoan:
         return result
 
     @property
-    def mortgage_per_month_usd(self):
+    def mortgage_per_month_usd(self) -> float:
         return self.mortgage_per_year_usd / self.MONTHS_PER_YEAR
 
     def calculate_monthly_interest(
             self,
             balance_usd: float,
-    ):
+    ) -> float:
         return (balance_usd * self.interest_rate_percentage) / 12
 
     def calculate_monthly_principal(
             self,
             interest_usd: float,
             balance_usd: float
-    ):
+    ) -> float:
         return (self.mortgage_per_month_usd - interest_usd) * (balance_usd > 0)
 
     def calculate_next_loan_status(
@@ -87,19 +87,19 @@ class PropertyLoan:
         )
         return initial_loan_status
 
-    def __iter__(self):
+    def __iter__(self) -> iter[LoanStatus]:
         loan_status = self.initial_loan_status
         yield loan_status
         while loan_status.balance > 0:
             loan_status = self.calculate_next_loan_status(loan_status)
             yield loan_status
 
-    def as_dataframe(self):
+    def as_dataframe(self) -> pd.DataFrame:
         df = pd.DataFrame(iter(self))
         df['date'] = pd.to_datetime(df['date'])
         return df
 
-    def yearly_dataframe(self):
+    def yearly_dataframe(self) -> pd.DataFrame:
         df = self.as_dataframe()
         df_by_year = (
             df
