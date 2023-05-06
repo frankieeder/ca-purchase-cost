@@ -6,6 +6,8 @@ from dateutil.relativedelta import relativedelta
 from typing import Iterable
 import plotly.graph_objects as go
 
+from streamlit_utils import percentage_input
+
 
 @dataclass
 class LoanStatus:
@@ -220,9 +222,6 @@ class IncomeAdjustedPropertyLoan(PropertyLoan):
         return self.anticipated_profit / (self.mortgage_years * self.MONTHS_PER_YEAR)
 
 
-PERCENT_MAX = 100
-
-
 def populate_mortgage_container(container):
     with container:
         purchase_price = st.number_input(
@@ -230,32 +229,20 @@ def populate_mortgage_container(container):
             value=1_000_000,
         )
 
-        down_payment_percentage = st.number_input(
+        down_payment_percentage = percentage_input(
             label='% Down',
-            min_value=0.0,
-            max_value=100.0,
             value=20.0,
-            step=1.0
         )
-        down_payment_percentage /= PERCENT_MAX
 
-        interest_rate_percentage = st.number_input(
+        interest_rate_percentage = percentage_input(
             label='% Interest',
-            min_value=0.0,
-            max_value=100.0,
             value=7.0,
-            step=1.0
         )
-        interest_rate_percentage /= PERCENT_MAX
 
-        property_tax_percentage = st.number_input(
+        property_tax_percentage = percentage_input(
             label='% Property Taxes',
-            min_value=0.0,
-            max_value=100.0,
             value=1.25,
-            step=1.0
         )
-        property_tax_percentage /= PERCENT_MAX
 
         mortgage_years = st.number_input(
             label='Mortgage Duration (years)',
@@ -272,14 +259,10 @@ def populate_mortgage_container(container):
 
 def populate_simulation_container(container):
     with container:
-        home_appreciation_percentage = st.number_input(
+        home_appreciation_percentage = percentage_input(
             label='% Home Value Appreciation per Year',
-            min_value=0.0,
-            max_value=100.0,
             value=7.0,
-            step=1.0
         )
-        home_appreciation_percentage /= PERCENT_MAX
         include_appreciation_as_reduction = st.checkbox("Include appreciation as reduction in monthly payment")
     return (
         home_appreciation_percentage,
