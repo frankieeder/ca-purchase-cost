@@ -313,29 +313,30 @@ if __name__ == '__main__':
                 "a guarantee of what you will end up paying for a home purchase, though please feel "
                 "free to email me at frankaeder@gmail.com with any corrections.")
 
-    mortgage_tab, simulation_tab, taxes_tab = st.tabs([
-        'Mortgage',
-        'Simulation',
-        'Taxes',
-    ])
+    with st.sidebar:
+        mortgage_tab, simulation_tab, taxes_tab = st.tabs([
+            'Mortgage',
+            'Simulation',
+            'Taxes',
+        ])
 
-    (
-        purchase_price,
-        down_payment_percentage,
-        interest_rate_percentage,
-        property_tax_percentage,
-        mortgage_years,
-    ) = populate_mortgage_container(mortgage_tab)
+        (
+            purchase_price,
+            down_payment_percentage,
+            interest_rate_percentage,
+            property_tax_percentage,
+            mortgage_years,
+        ) = populate_mortgage_container(mortgage_tab)
 
-    (
-        home_appreciation_percentage,
-        include_appreciation_as_reduction,
-    ) = populate_simulation_container(simulation_tab)
+        (
+            home_appreciation_percentage,
+            include_appreciation_as_reduction,
+        ) = populate_simulation_container(simulation_tab)
 
-    (
-        agi_usd,
-        itemized_deductions_usd
-    ) = populate_taxes_container(taxes_tab)
+        (
+            agi_usd,
+            itemized_deductions_usd
+        ) = populate_taxes_container(taxes_tab)
 
     property_loan = IncomeAdjustedPropertyLoan(
         purchase_price=purchase_price,
