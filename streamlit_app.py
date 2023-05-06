@@ -42,7 +42,7 @@ class PropertyLoan:
 
     @property
     def loan_amount_usd(self):
-        return purchase_price * (1 - down_payment_percentage)
+        return self.purchase_price * (1 - self.down_payment_percentage)
 
     @property
     def mortgage_per_year_usd(self) -> float:
@@ -220,72 +220,118 @@ class IncomeAdjustedPropertyLoan(PropertyLoan):
         return self.anticipated_profit / (self.mortgage_years * self.MONTHS_PER_YEAR)
 
 
+PERCENT_MAX = 100
+
+
+def populate_mortgage_column(column):
+    with column:
+        purchase_price = st.number_input(
+            label='Purchase Price',
+            value=1_000_000,
+        )
+
+        down_payment_percentage = st.number_input(
+            label='% Down',
+            min_value=0.0,
+            max_value=100.0,
+            value=20.0,
+            step=1.0
+        )
+        down_payment_percentage /= PERCENT_MAX
+
+        interest_rate_percentage = st.number_input(
+            label='% Interest',
+            min_value=0.0,
+            max_value=100.0,
+            value=7.0,
+            step=1.0
+        )
+        interest_rate_percentage /= PERCENT_MAX
+
+        property_tax_percentage = st.number_input(
+            label='% Property Taxes',
+            min_value=0.0,
+            max_value=100.0,
+            value=1.25,
+            step=1.0
+        )
+        property_tax_percentage /= PERCENT_MAX
+
+        mortgage_years = st.number_input(
+            label='Mortgage Duration (years)',
+            value=30,
+        )
+    return (
+        purchase_price,
+        down_payment_percentage,
+        interest_rate_percentage,
+        property_tax_percentage,
+        mortgage_years,
+    )
+
+
+def populate_simulation_column(column):
+    with column:
+        home_appreciation_percentage = st.number_input(
+            label='% Home Value Appreciation per Year',
+            min_value=0.0,
+            max_value=100.0,
+            value=7.0,
+            step=1.0
+        )
+        home_appreciation_percentage /= PERCENT_MAX
+        include_appreciation_as_reduction = st.checkbox("Include appreciation as reduction in monthly payment")
+    return (
+        home_appreciation_percentage,
+        include_appreciation_as_reduction,
+    )
+
+
+def populate_taxes_column(column):
+    with column:
+        agi_usd = st.number_input(
+            label='Adjusted Gross Income',
+            help='excluding property related deductions, which we will calculate',
+            min_value=0.0,
+            value=70_000.0,
+        )
+        itemized_deductions_usd = st.number_input(
+            label='Itemized Deductions',
+            help='Used in above calculation',
+            min_value=0.0,
+            value=0.0,
+        )
+    return (
+        agi_usd,
+        itemized_deductions_usd
+    )
+
+
 if __name__ == '__main__':
     st.markdown("This tool helps determine the actual cost of a home purchase in California, USA, "
                 "given my understanding of tax and property laws currently standing. This is by no means "
                 "a guarantee of what you will end up paying for a home purchase, though please feel "
                 "free to email me at frankaeder@gmail.com with any corrections.")
 
-    purchase_price = st.number_input(
-        label='Purchase Price',
-        value=1_000_000,
-    )
+    mortgage_column, simulation_column, taxes_column = st.columns(3)
 
-    PERCENT_MAX = 100
-    down_payment_percentage = st.number_input(
-        label='% Down',
-        min_value=0.0,
-        max_value=100.0,
-        value=20.0,
-        step=1.0
-    )
-    down_payment_percentage /= PERCENT_MAX
+    (
+        purchase_price,
+        down_payment_percentage,
+        interest_rate_percentage,
+        property_tax_percentage,
+        mortgage_years,
+    ) = populate_mortgage_column(mortgage_column)
 
-    interest_rate_percentage = st.number_input(
-        label='% Interest',
-        min_value=0.0,
-        max_value=100.0,
-        value=7.0,
-        step=1.0
-    )
-    interest_rate_percentage /= PERCENT_MAX
+    (
+        home_appreciation_percentage,
+        include_appreciation_as_reduction,
+    ) = populate_simulation_column(simulation_column)
 
-    home_appreciation_percentage = st.number_input(
-        label='% Home Value Appreciation per Year',
-        min_value=0.0,
-        max_value=100.0,
-        value=7.0,
-        step=1.0
-    )
-    home_appreciation_percentage /= PERCENT_MAX
-    include_appreciation_as_reduction = st.checkbox("Include appreciation as reduction in monthly payment")
-
-    property_tax_percentage = st.number_input(
-        label='% Property Taxes',
-        min_value=0.0,
-        max_value=100.0,
-        value=1.25,
-        step=1.0
-    )
-    property_tax_percentage /= PERCENT_MAX
-
-    mortgage_years = st.number_input(
-        label='Mortgage Duration (years)',
-        value=30,
-    )
-
-    agi_usd = st.number_input(
-        label='Adjusted Gross Income',
-        help='excluding property related deductions, which we will calculate',
-        min_value=0.0,
-        value=70_000.0,
-    )
-    itemized_deductions_usd = st.number_input(
-        label='Itemized Deductions',
-        help='Used in above calculation',
-        min_value=0.0,
-        value=0.0,
-    )
+    (
+        agi_usd,
+        itemized_deductions_usd
+    ) = populate_taxes_column(taxes_column)
 
     property_loan = IncomeAdjustedPropertyLoan(
         purchase_price=purchase_price,
