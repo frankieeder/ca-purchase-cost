@@ -37,6 +37,7 @@ class PropertyLoan:
     mortgage_years: float
     property_taxes_yearly_usd: float
     home_appreciation_percentage: float
+    include_appreciation_as_reduction: bool = True
     payment_interval: relativedelta = relativedelta(months=1)
 
     @property
@@ -185,8 +186,10 @@ class IncomeAdjustedPropertyLoan(PropertyLoan):
         df['maximum_deduction'] = df[['total_itemized_deductions', 'standard_deduction']].max(axis=1)
         df['agi_reduced'] = df['agi'] - df['maximum_deduction']
         df['estimated_tax_savings'] = -0.4 * df['maximum_deduction']
-        df['estimated_appreciation_effective_mortgage_decrease'] = - self.appreciation_effective_mortgage_decrease
-        df['total'] = df[self.PAYMENT_COLUMN_MAPPINGS.keys()].sum(axis=1)
+        if self.include_appreciation_as_reduction:
+            df['estimated_appreciation_effective_mortgage_decrease'] = - self.appreciation_effective_mortgage_decrease
+        existing_payment_columns = list(self.PAYMENT_COLUMN_MAPPINGS.keys() & set(df.columns))
+        df['total'] = df[existing_payment_columns].sum(axis=1)
         return df
 
     def graph_yearly(self) -> go.Figure:
@@ -255,6 +258,7 @@ if __name__ == '__main__':
         step=1.0
     )
     home_appreciation_percentage /= PERCENT_MAX
+    include_appreciation_as_reduction = st.checkbox("Include appreciation as reduction in monthly payment")
 
     property_tax_percentage = st.number_input(
         label='% Property Taxes',
@@ -290,6 +294,7 @@ if __name__ == '__main__':
         mortgage_years=mortgage_years,
         property_taxes_yearly_usd=purchase_price * property_tax_percentage,
         home_appreciation_percentage=home_appreciation_percentage,
+        include_appreciation_as_reduction=include_appreciation_as_reduction,
 
         agi_usd=agi_usd,
         itemized_deductions_usd=itemized_deductions_usd,
