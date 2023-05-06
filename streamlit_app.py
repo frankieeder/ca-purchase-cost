@@ -31,11 +31,17 @@ class PropertyLoan:
         taxes='Taxes',
     )
 
-    loan_amount_usd: float
+    purchase_price: float
+    down_payment_percentage: float
     interest_rate_percentage: float
     mortgage_years: float
     property_taxes_yearly_usd: float
+    home_appreciation_percentage: float
     payment_interval: relativedelta = relativedelta(months=1)
+
+    @property
+    def loan_amount_usd(self):
+        return purchase_price * (1 - down_payment_percentage)
 
     @property
     def mortgage_per_year_usd(self) -> float:
@@ -164,6 +170,7 @@ class IncomeAdjustedPropertyLoan(PropertyLoan):
         principal='Principal',
         taxes='Taxes',
         estimated_tax_savings='Estimated Tax Savings',
+        estimated_appreciation_effective_mortgage_decrease='Appreciation Reduction'
     )
 
     agi_usd: float
@@ -178,13 +185,42 @@ class IncomeAdjustedPropertyLoan(PropertyLoan):
         df['maximum_deduction'] = df[['total_itemized_deductions', 'standard_deduction']].max(axis=1)
         df['agi_reduced'] = df['agi'] - df['maximum_deduction']
         df['estimated_tax_savings'] = -0.4 * df['maximum_deduction']
+        df['estimated_appreciation_effective_mortgage_decrease'] = - self.appreciation_effective_mortgage_decrease
+        df['total'] = df[self.PAYMENT_COLUMN_MAPPINGS.keys()].sum(axis=1)
         return df
+
+    def graph_yearly(self) -> go.Figure:
+        fig = super().graph_yearly()
+        df = self.dataframe_yearly
+        fig.add_trace(go.Line(
+            name='Net',
+            x=df.index,
+            y=df['total'],
+        ))
+        return fig
+
+    def appreciation_multiplier_at_year(self, year: float):
+        return (1 + self.home_appreciation_percentage) ** year
+
+    @property
+    def final_value(self):
+        multiplier = self.appreciation_multiplier_at_year(self.mortgage_years)
+        final_value = multiplier * self.purchase_price
+        return final_value
+
+    @property
+    def anticipated_profit(self):
+        return self.final_value - self.purchase_price
+
+    @property
+    def appreciation_effective_mortgage_decrease(self):
+        return self.anticipated_profit / (self.mortgage_years * self.MONTHS_PER_YEAR)
 
 
 if __name__ == '__main__':
-    st.markdown("This tool helps determine the actual cost of a home purchase in California, USA,"
-                "given my understanding of tax and property laws currently standing. This is by no means"
-                "a guarantee of what you will end up paying for a home purchase, though please feel"
+    st.markdown("This tool helps determine the actual cost of a home purchase in California, USA, "
+                "given my understanding of tax and property laws currently standing. This is by no means "
+                "a guarantee of what you will end up paying for a home purchase, though please feel "
                 "free to email me at frankaeder@gmail.com with any corrections.")
 
     purchase_price = st.number_input(
@@ -210,6 +246,15 @@ if __name__ == '__main__':
         step=1.0
     )
     interest_rate_percentage /= PERCENT_MAX
+
+    home_appreciation_percentage = st.number_input(
+        label='% Home Value Appreciation per Year',
+        min_value=0.0,
+        max_value=100.0,
+        value=7.0,
+        step=1.0
+    )
+    home_appreciation_percentage /= PERCENT_MAX
 
     property_tax_percentage = st.number_input(
         label='% Property Taxes',
@@ -239,10 +284,12 @@ if __name__ == '__main__':
     )
 
     property_loan = IncomeAdjustedPropertyLoan(
-        loan_amount_usd=purchase_price * (1 - down_payment_percentage),
+        purchase_price=purchase_price,
+        down_payment_percentage=down_payment_percentage,
         interest_rate_percentage=interest_rate_percentage,
         mortgage_years=mortgage_years,
         property_taxes_yearly_usd=purchase_price * property_tax_percentage,
+        home_appreciation_percentage=home_appreciation_percentage,
 
         agi_usd=agi_usd,
         itemized_deductions_usd=itemized_deductions_usd,
