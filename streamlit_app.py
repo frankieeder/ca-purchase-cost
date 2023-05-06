@@ -223,8 +223,8 @@ class IncomeAdjustedPropertyLoan(PropertyLoan):
 PERCENT_MAX = 100
 
 
-def populate_mortgage_column(column):
-    with column:
+def populate_mortgage_container(container):
+    with container:
         purchase_price = st.number_input(
             label='Purchase Price',
             value=1_000_000,
@@ -270,8 +270,8 @@ def populate_mortgage_column(column):
     )
 
 
-def populate_simulation_column(column):
-    with column:
+def populate_simulation_container(container):
+    with container:
         home_appreciation_percentage = st.number_input(
             label='% Home Value Appreciation per Year',
             min_value=0.0,
@@ -287,8 +287,8 @@ def populate_simulation_column(column):
     )
 
 
-def populate_taxes_column(column):
-    with column:
+def populate_taxes_container(container):
+    with container:
         agi_usd = st.number_input(
             label='Adjusted Gross Income',
             help='excluding property related deductions, which we will calculate',
@@ -313,7 +313,11 @@ if __name__ == '__main__':
                 "a guarantee of what you will end up paying for a home purchase, though please feel "
                 "free to email me at frankaeder@gmail.com with any corrections.")
 
-    mortgage_column, simulation_column, taxes_column = st.columns(3)
+    mortgage_tab, simulation_tab, taxes_tab = st.tabs([
+        'Mortgage',
+        'Simulation',
+        'Taxes',
+    ])
 
     (
         purchase_price,
@@ -321,17 +325,17 @@ if __name__ == '__main__':
         interest_rate_percentage,
         property_tax_percentage,
         mortgage_years,
-    ) = populate_mortgage_column(mortgage_column)
+    ) = populate_mortgage_container(mortgage_tab)
 
     (
         home_appreciation_percentage,
         include_appreciation_as_reduction,
-    ) = populate_simulation_column(simulation_column)
+    ) = populate_simulation_container(simulation_tab)
 
     (
         agi_usd,
         itemized_deductions_usd
-    ) = populate_taxes_column(taxes_column)
+    ) = populate_taxes_container(taxes_tab)
 
     property_loan = IncomeAdjustedPropertyLoan(
         purchase_price=purchase_price,
@@ -346,9 +350,13 @@ if __name__ == '__main__':
         itemized_deductions_usd=itemized_deductions_usd,
     )
 
+    st.markdown("---")
+
     st.markdown(f"Loan Amount: {property_loan.loan_amount_usd}")
     st.markdown(f"Monthly Payment: {property_loan.mortgage_per_month_usd}")
     st.markdown(f"Total Interest Paid: {property_loan.total_interest}")
+
+    st.markdown("---")
 
     st.write(property_loan.graph_yearly())
     st.write(property_loan.graph_monthly())
